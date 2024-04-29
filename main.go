@@ -4,30 +4,63 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ThePacifisticAnarchist/todo-cli/todo"
-	"time"
+	"os"
 )
 
 func main() {
 	fmt.Printf("This is a CLI app to manage todo lists. Its written in golang\n")
-	t := todo.Todo{
-		Title:     "",
-		Desc:      "Just checking app",
-		Done:      false,
-		CreatedAt: time.Now(),
-	}
 
-	//t.Print()
-	if t.Validate() != nil {
-		fmt.Printf("Todo is not valid. Error: %v\n", t.Validate())
-	} else {
-		fmt.Printf("The todo is valid\n")
-	}
+	f, err := os.OpenFile("/home/ganesh/GolandProjects/workshop/ToDo/todos.json", os.O_CREATE|
+		os.O_RDWR, 0644)
 
-	todoBytes, err := json.Marshal(t)
 	if err != nil {
-		fmt.Printf("Something went wrong while encoding to json: %v\n", err)
+		fmt.Printf("Error when opening file: %v\n", err)
 	}
-	fmt.Printf("\nJSON Bytes: %v\n", todoBytes)
-	todoJsonString := string(todoBytes)
-	fmt.Printf("\nJSON String: %v\n", string(todoJsonString))
+
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Printf("Some fatal error: %v", err)
+		}
+	}(f)
+
+	// Read the contents of the existing file...
+	dat, err := os.ReadFile("/home/ganesh/GolandProjects/workshop/ToDo/todos.json")
+	// fmt.Print(string(dat))
+
+	var existingTodos []todo.Todo
+
+	// ... and try to cast it in a slice of todos
+	err = json.Unmarshal(dat, &existingTodos)
+	if err != nil {
+		fmt.Printf("Fatal error when reading file: %v", err)
+	}
+
+	// ... and print them!
+	for _, t := range existingTodos {
+		t.Print()
+		fmt.Printf("####")
+	}
+
+	todos := todo.InputLoop(existingTodos)
+	for _, t := range todos {
+		t.Print()
+		fmt.Printf("####")
+	}
+
+	// Let's convert the list of Todos to JSON
+	todoJsonBytes, err := json.MarshalIndent(todos, "", "")
+	if err != nil {
+		fmt.Printf("Error when marshalling to JSON: %v", err)
+		return
+	}
+
+	todoJsonContents := string(todoJsonBytes)
+
+	_, err = f.WriteString(todoJsonContents)
+	if err != nil {
+		fmt.Printf("Error when writing to file: %v\n", err)
+	}
+	fmt.Printf("Wrote contents to file")
+
 }

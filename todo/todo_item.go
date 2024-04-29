@@ -33,3 +33,7 @@ func (todo *Todo) Print() {
 	}
 	fmt.Printf("Title: %v\nDescription: %v\nCreated At: %v\nDone: %v\n", todo.Title, todo.Desc, todo.CreatedAt.Format("2006-01-02 15:04"), doneYesNo)
 }
+
+func (todo *Todo) PrintIdAndTitle(id int) {
+	fmt.Printf("\n%v: %v", id, todo.Title)
+}
